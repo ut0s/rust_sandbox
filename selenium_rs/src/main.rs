@@ -2,18 +2,21 @@ use std::time::Instant;
 use thirtyfour::prelude::*;
 use tokio;
 
-#[tokio::main]
-async fn main() -> WebDriverResult<()> {
+const HEADLESS_MODE: bool = true;
+
+async fn worker(is_headless: bool) -> WebDriverResult<()> {
   //start timer
   let start = Instant::now();
 
-  let caps = DesiredCapabilities::chrome();
+  let mut caps = DesiredCapabilities::chrome();
+  if is_headless {
+    let _ = caps.set_headless();
+  }
   let driver = WebDriver::new("http://localhost:4444", &caps).await?;
 
   // Navigate to https://wikipedia.org.
   driver.get("https://play2048.co").await?;
   let html_body = driver.find_element(By::Tag("body")).await?;
-  // println!("{}", html_body);
 
   // restart
   html_body.send_keys('r').await?;
@@ -64,4 +67,11 @@ async fn main() -> WebDriverResult<()> {
   println!("{}", score.text().await?);
 
   Ok(())
+}
+
+#[tokio::main]
+async fn main() {
+  let _1 = worker(HEADLESS_MODE).await;
+  // let _2 = worker(HEADLESS_MODE).await;
+  // let _3 = worker(HEADLESS_MODE).await;
 }
