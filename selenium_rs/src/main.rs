@@ -4,6 +4,7 @@ use std::time::Instant;
 use thirtyfour_sync::prelude::*;
 // use thirtyfour::prelude::*;
 // use tokio;
+use std::collections::HashMap;
 
 const HEADLESS_MODE: bool = true;
 const TILE_SIZE: usize = 4;
@@ -51,9 +52,9 @@ fn get_grid_info(tiles: &mut Vec<Vec<u64>>, line: String) {
   //   let tmp_state: Vec<&str> = tmp[3].split("-").collect();
   //   println!("{}", tmp_state[1]);
   // }
+
   // println!("tile num:{}", num);
   // println!("x:{},y:{}", x_pos, y_pos);
-
   tiles[y_pos - 1][x_pos - 1] = num;
 }
 
@@ -70,10 +71,9 @@ fn predict(tiles: &Vec<Vec<u64>>) -> Direction {
       ret = *dir;
     }
   }
-
   // not update tiles
   if ans == 18 {
-    ret = match rand::thread_rng().gen_range(0..5) {
+    ret = match rand::thread_rng().gen_range(0..4) {
       0 => Direction::Top,
       1 => Direction::Right,
       2 => Direction::Left,
@@ -151,6 +151,19 @@ fn line_to_left(l: &mut Vec<u64>) {
     l.remove(2);
     l[2] *= 2;
     l.push(0);
+  }
+}
+
+fn show_res(res: &HashMap<i32, u32>) {
+  print!("{}[2J", 27 as char);
+  let mut sum = 0;
+  for (k, v) in res {
+    sum += v;
+  }
+
+  println!("Count:{} times", sum);
+  for (k, v) in res {
+    println!("{}: {}[%]", k, 100.0 * (*v as f64) / (sum as f64));
   }
 }
 
@@ -358,7 +371,7 @@ mod tests {
   }
 }
 
-fn worker(is_headless: bool) -> WebDriverResult<()> {
+fn worker(is_headless: bool, res: &mut HashMap<i32, u32>) -> WebDriverResult<()> {
   //start timer
   let start = Instant::now();
 
@@ -395,9 +408,9 @@ fn worker(is_headless: bool) -> WebDriverResult<()> {
     if tiles == old_tiles {
       check_stuck += 1;
       if check_stuck > 10 {
-        for i in 0..tiles.len() {
-          println!("{:?}", tiles[i]);
-        }
+        // for i in 0..tiles.len() {
+        //   println!("{:?}", tiles[i]);
+        // }
         break;
       }
     } else {
@@ -423,11 +436,11 @@ fn worker(is_headless: bool) -> WebDriverResult<()> {
 
   //end timer
   let end = start.elapsed();
-  println!(
-    "Send keys :{}.{:03}[s]",
-    end.as_secs(),
-    end.subsec_nanos() / 1_000_000
-  );
+  // println!(
+  //   "Send keys :{}.{:03}[s]",
+  //   end.as_secs(),
+  //   end.subsec_nanos() / 1_000_000
+  // );
 
   //start timer
   let start = Instant::now();
@@ -443,22 +456,37 @@ fn worker(is_headless: bool) -> WebDriverResult<()> {
   }
   //end timer
   let end = start.elapsed();
-  println!(
-    "Get tile info :{}.{:03}[s]",
-    end.as_secs(),
-    end.subsec_nanos() / 1_000_000
-  );
+  // println!(
+  //   "Get tile info :{}.{:03}[s]",
+  //   end.as_secs(),
+  //   end.subsec_nanos() / 1_000_000
+  // );
 
   tiles_vec.sort_unstable();
   // println!("{:?}", tiles_vec);
-  println!("max num of tile: {}", tiles_vec[tiles_vec.len() - 1]);
+  let max_tile_num = tiles_vec[tiles_vec.len() - 1];
+  // println!("max num of tile: {}", max_tile_num);
 
-  let score = driver.find_element(By::ClassName("score-container"))?;
-  println!("{}", score.text()?);
+  if res.contains_key(&max_tile_num) {
+    *res.get_mut(&max_tile_num).unwrap() += 1;
+  } else {
+    res.insert(max_tile_num, 1);
+  }
+
+  // let score = driver.find_element(By::ClassName("score-container"))?;
+  // println!("{}", score.text()?);
+
+  if max_tile_num > 1000 {
+    let _ = driver.screenshot_as_png();
+  }
 
   Ok(())
 }
 
 fn main() {
-  let _1 = worker(HEADLESS_MODE);
+  let mut res = HashMap::new();
+  loop {
+    let _1 = worker(HEADLESS_MODE, &mut res);
+    show_res(&res);
+  }
 }
