@@ -10,6 +10,13 @@ const HEADLESS_MODE: bool = true;
 const TILE_SIZE: usize = 4;
 // const DEPTH_COUNT: u32 = 1;
 
+const WEIGHT: [[i32; 4]; 4] = [
+  [0, 1, 2 * 450, 8 * 650],
+  [0, 1, 2 * 500, 8 * 700],
+  [0, 1, 2 * 550, 8 * 750],
+  [0, 1, 2 * 600, 8 * 800],
+];
+
 #[derive(Clone)]
 struct Tile {
   pub number: u64,
@@ -59,20 +66,21 @@ fn get_grid_info(tiles: &mut Vec<Vec<u64>>, line: String) {
 }
 
 fn predict(tiles: &Vec<Vec<u64>>) -> Direction {
-  let mut ans = 18;
+  let mut ans = -1;
   let mut ret = Direction::Top;
   for dir in Direction::iterator() {
     let mut tiles_moved = tiles.clone();
     next_tiles(&mut tiles_moved, *dir);
-    let tmp = eval_tiles(&tiles, &tiles_moved);
+    // add_random_tile(&mut tiles_moved);
+    let tmp = eval_tiles(&tiles, &tiles_move4);
 
-    if ans > tmp {
+    if ans < tmp {
       ans = tmp;
       ret = *dir;
     }
   }
   // not update tiles
-  if ans == 18 {
+  if ans == -1 {
     ret = match rand::thread_rng().gen_range(0..4) {
       0 => Direction::Top,
       1 => Direction::Right,
@@ -84,19 +92,52 @@ fn predict(tiles: &Vec<Vec<u64>>) -> Direction {
   ret
 }
 
-fn eval_tiles(tiles_org: &Vec<Vec<u64>>, tiles_moved: &Vec<Vec<u64>>) -> u32 {
+fn eval_tiles(tiles_org: &Vec<Vec<u64>>, tiles_moved: &Vec<Vec<u64>>) -> i32 {
   if tiles_org == tiles_moved {
-    18
+    -1
   } else {
-    let mut c = 0;
-    for v in tiles_moved.iter() {
-      for e in v.iter() {
-        if *e != 0 {
-          c += 1;
+    let mut ret: i32 = 0;
+
+    for i in 0..TILE_SIZE {
+      for j in 0..TILE_SIZE {
+        if tiles_moved[i][j] == 0 {
+          // empty tile
+          ret += 100;
+        }
+        // weighted point
+        ret += WEIGHT[i][j] * tiles_moved[i][j] as i32;
+
+        if i > 1 && j != TILE_SIZE - 1 && tiles_moved[i][j] < tiles_moved[i][j + 1] {
+          ret += 1000;
+        }
+        if i > 1 && j != TILE_SIZE - 1 && tiles_moved[i][j] == tiles_moved[i][j + 1] {
+          ret += 5000;
+        }
+        if (i == 1 || i == 2) && j != TILE_SIZE - 1 && tiles_moved[i][j] < tiles_moved[i][j + 1] {
+          ret += 5000;
         }
       }
     }
-    c
+    ret
+  }
+}
+
+fn add_random_tile(tiles: &mut Vec<Vec<u64>>) {
+  let mut cells_available: Vec<(usize, usize)> = Vec::new();
+  for i in 0..tiles.len() {
+    for j in 0..tiles[i].len() {
+      if tiles[i][j] == 0 {
+        cells_available.push((i, j));
+      }
+    }
+  }
+
+  let (i, j) = cells_available[rand::thread_rng().gen_range(0..cells_available.len())];
+  let prob: f32 = rand::thread_rng().gen_range(0.0..1.0f32);
+  if prob < 0.9 {
+    tiles[i][j] = 2;
+  } else {
+    tiles[i][j] = 4;
   }
 }
 
@@ -427,10 +468,10 @@ fn worker(is_headless: bool, res: &mut HashMap<i32, u32>) -> WebDriverResult<()>
     std::thread::sleep(std::time::Duration::from_millis(15));
     old_tiles = tiles.clone();
 
-    // for i in 0..tiles.len() {
-    //   println!("{:?}", tiles[i]);
-    // }
-    // println!("{:?}", key);
+    for i in 0..tiles.len() {
+      println!("{:?}", tiles[i]);
+    }
+    println!("{:?}", key);
     // println!("Stuck Count:{}", check_stuck);
   }
 
@@ -463,8 +504,8 @@ fn worker(is_headless: bool, res: &mut HashMap<i32, u32>) -> WebDriverResult<()>
   // );
 
   tiles_vec.sort_unstable();
-  // println!("{:?}", tiles_vec);
   let max_tile_num = tiles_vec[tiles_vec.len() - 1];
+  // println!("{:?}", tiles_vec);
   // println!("max num of tile: {}", max_tile_num);
 
   if res.contains_key(&max_tile_num) {
