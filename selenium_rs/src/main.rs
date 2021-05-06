@@ -72,7 +72,7 @@ fn predict(tiles: &Vec<Vec<u64>>) -> Direction {
     let mut tiles_moved = tiles.clone();
     next_tiles(&mut tiles_moved, *dir);
     // add_random_tile(&mut tiles_moved);
-    let tmp = eval_tiles(&tiles, &tiles_move4);
+    let tmp = eval_tiles(&tiles, &tiles_moved);
 
     if ans < tmp {
       ans = tmp;
