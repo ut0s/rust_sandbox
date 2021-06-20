@@ -1,5 +1,7 @@
 use rand::Rng;
+use std::slice::Iter;
 
+#[derive(Clone, Copy)]
 pub enum Direction {
   Left,
   Right,
@@ -16,6 +18,16 @@ impl Direction {
       3 => Direction::Down,
       _ => Direction::Down,
     }
+  }
+
+  pub fn iterator() -> Iter<'static, Direction> {
+    static DIRECTIONS: [Direction; 4] = [
+      Direction::Left,
+      Direction::Right,
+      Direction::Up,
+      Direction::Down,
+    ];
+    DIRECTIONS.iter()
   }
 }
 
@@ -191,7 +203,7 @@ impl Game {
     self.board = ret;
   }
 
-  pub fn move_to(&mut self, dir: Direction) {
+  pub fn move_to(&mut self, dir: Direction) -> u64 {
     let rot_count: u32 = match dir {
       Direction::Right => 2,
       Direction::Left => 0,
@@ -205,6 +217,7 @@ impl Game {
     for _ in 0..((4 - rot_count) % 4) {
       self.rotate90deg();
     }
+    self.score
   }
 
   pub fn show_matrix(self) {

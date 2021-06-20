@@ -1,11 +1,12 @@
 mod game;
-// mod solver;
+mod solver;
+
 use std::collections::HashMap;
 
 fn show_result(res: &HashMap<u64, u32>) {
   print!("{}[2J", 27 as char);
   let mut sum = 0;
-  for (k, v) in res {
+  for (_, v) in res {
     sum += v;
   }
 
@@ -25,11 +26,15 @@ fn main() {
 
   let mut res = HashMap::new();
 
-  // let mut s = slover::Solver;
-
   // play game
   loop {
-    g.move_to(game::Direction::random_dir()); //random move
+    // g.move_to(game::Direction::random_dir()); //random move
+    let mut s = solver::Solver {
+      game: g,
+      max_value: 0,
+    };
+
+    g.move_to(s.next_dir(3)); //dfs move
     g.spawn_tile();
 
     // print!("{}[2J", 27 as char);
