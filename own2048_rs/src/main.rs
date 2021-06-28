@@ -1,6 +1,7 @@
 mod game;
 mod solver;
 
+use itertools::Itertools;
 use std::collections::HashMap;
 
 fn show_result(res: &HashMap<u64, u32>) {
@@ -11,8 +12,8 @@ fn show_result(res: &HashMap<u64, u32>) {
   }
 
   println!("Count:{} times", sum);
-  for (k, v) in res {
-    println!("{}: {}[%]", k, 100.0 * (*v as f64) / (sum as f64));
+  for k in res.keys().sorted() {
+    println!("{}: {}[%]", k, 100.0 * (res[k] as f64) / (sum as f64));
   }
 }
 
