@@ -253,8 +253,8 @@ impl Game {
     self.move_to(Direction::Right);
     self.move_to(Direction::Up);
 
-    println!("self: {:16X}", self.board);
-    println!("org:  {:16X}", board_org);
+    // println!("self: {:16X}", self.board);
+    // println!("org:  {:16X}", board_org);
 
     if self.board == board_org {
       return true;

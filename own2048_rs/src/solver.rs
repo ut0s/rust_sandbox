@@ -70,4 +70,33 @@ impl Solver {
     }
     return ret_dir;
   }
+
+  pub fn try_till_end(&mut self, try_count: u64) -> u64 {
+    let mut g = self.game.clone();
+    let mut sum: u64 = 0;
+
+    // play game
+    for _ in 0..try_count {
+      while (g.count_empty() == 0 && g.is_end()) {
+        g.move_to(game::Direction::random_dir()); //random move
+        g.spawn_tile();
+      }
+      sum += g.score;
+    }
+
+    return sum / try_count;
+  }
+
+  pub fn next_dir2(&mut self, try_count: u64) -> game::Direction {
+    let mut ret_dir = game::Direction::Down;
+    let mut tmp = 0;
+    for dir in game::Direction::iterator() {
+      let score_ave = self.try_till_end(try_count);
+      if tmp < score_ave {
+        tmp = score_ave;
+        ret_dir = *dir;
+      };
+    }
+    return ret_dir;
+  }
 }
